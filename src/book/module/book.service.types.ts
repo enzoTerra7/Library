@@ -12,4 +12,9 @@ export class BookDTO {
     description: 'Descrição do livro'
   })
   description: string;
+
+  @ApiProperty({
+    description: 'ID do usuário ao qual o livro pertence'
+  })
+  userId: string
 }

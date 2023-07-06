@@ -10,10 +10,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  email    String @unique
+  password String
+  books    Book[]
+
+  @@map("users")
+}
+
 model Book {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-  title String
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
   description String
+  User        User   @relation(fields: [userId], references: [id])
+  userId      String @db.ObjectId
 
   @@map("books")
 }
