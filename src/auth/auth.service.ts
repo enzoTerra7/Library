@@ -1,26 +1,51 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { Injectable, HttpStatus, HttpException } from '@nestjs/common';
+import { AuthDto } from './dto/auth.dto';
+import { PrismaService } from 'prisma/lib';
+import * as bcrypt from 'bcrypt'
+import { createAccessToken } from 'lib/utils';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+
+  constructor(private prisma: PrismaService) { }
+
+  async postLogin(data: AuthDto) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email: data.email
+        }
+      })
+
+      if (!user) {
+        return new HttpException(
+          { status: 'error', message: 'Usuário não encontrado' },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      if(!bcrypt.compare(data.password, user.password)) {
+        return new HttpException(
+          { status: 'error', message: 'Credenciais inválidas.' },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const accessToken = createAccessToken(data)
+      
+      return new HttpException(
+        { status: 'success', message: 'Login realizado com sucesso.', data: {
+          user: user,
+          token: accessToken
+        } },
+        HttpStatus.OK,
+      );
+    } catch (e) {
+      throw new HttpException(
+        { status: 'error', message: 'Falha ao realizar login', data: e },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
-  findAll() {
-    return `This action returns all auth`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
-  }
 }
